@@ -1,0 +1,45 @@
+create table Person (driverId int primary key, name varchar(20), address varchar(20));
+create table Car (license varchar(20) primary key, model varchar(20), year int);
+create table Accident (reportNumber varchar(20), date date, location varchar(20), primary key(reportNumber, date));
+create table Owns (driverId int, license varchar(20), primary key(driverId, license), foreign key (driverId) references Person(driverId), foreign key (license) references Car(license) on delete cascade);
+create table Participated (driverId int, license varchar(20), reportNumber varchar(20), damageAmount int, primary key(driverId, license, reportNumber), foreign key (driverId) references Person(driverId), foreign key (license) references Car(license), foreign key (reportNumber) references Accident(reportNumber));
+
+insert into Person values(1,'John Smith', 'AA');
+insert into Car values('AABB2000','Mazda',2001);
+insert into Accident values('AR2197', '2002-02-02', 'AA');
+insert into Owns values(1, 'AABB2000');
+insert into Participated values(1, 'AABB2000', 'AR2197', 500);
+
+select count(distinct driverId) from Participated where driverId in (select driverId from Owns);
+
+select count(driverId) from Participated where driverId in (select driverId from Person where name='John Smith');
+
+delete from Owns where license in (select license from Car where model='Mazda') and driverId in (select driverId from Person where name='John Smith');
+
+update Participated set damageAmount=3000 where reportNumber='AR2197' and license='AABB2000';
+
+
+create table Employee (personName varchar(20) primary key, street varchar(20), city varchar(20));
+create table Company(companyName varchar(20) primary key, city varchar(20));
+create table Works (personName varchar(20) primary key, companyName varchar(20), salary int, foreign key (personName) references Employee(personName), foreign key (companyName) references Company(companyName));
+create table Manages (personName varchar(20), managerName varchar(20), foreign key (personName) references Employee(personName), foreign key (managerName) references Employee(personName), primary key(personName, managerName));
+
+insert into Employee values('A', 'A', 'F');
+insert into Employee values('C', 'A', 'F');
+insert into Employee values('B','B','S');
+insert into Company values('FBC', 'F');
+insert into Company values('SBC', 'S');
+insert into Company values('NBC', 'S');
+insert into Works values('A', 'FBC', 11000);
+insert into Works values('C', 'FBC', 1100);
+insert into Works values('B','SBC', 3000);
+insert into Manages values('C', 'A');
+
+select personName from Works where companyName='FBC';
+select personName, city from Employee where personName in (select personName from Works where companyName='FBC');
+select * from Employee where personName in (select personName from Works where companyName='FBC' and salary>10000);
+select e.personName from Employee e inner join Works w on w.personName=e.personName inner join Company c on c.companyName=w.companyName where c.city=e.city;
+select e.personName from Employee e inner join Manages m on e.personName=m.personName where e.city=(select city from Employee where personName=m.managerName);
+select personName from Works where companyName<>'FBC';
+select personName from Works where salary>(select max(salary) from Works where companyName='SBC');
+select companyName from Company where city=(select city from Company where companyName='SBC');
